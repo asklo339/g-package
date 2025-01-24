@@ -48,12 +48,10 @@ jobs:
         with:
           docker-run-args: --privileged
 
-
       # Step 4: Start the Docker container and set up the Android SDK
       - name: Set up Android SDK
         run: |
           sudo ./scripts/run-docker.sh ./scripts/setup-android-sdk.sh
-
 
       # Step 5: Install Python 3.11
       - name: Install Python
@@ -66,8 +64,6 @@ jobs:
             sudo apt-get install -y python3.11
             python3.11 --version
           "
-          
-    
 
       # Step 6: Build the package and capture logs
       - name: Build package
@@ -92,11 +88,23 @@ jobs:
           name: build-logs
           path: ${{ env.build_log }}
 
-      # Step 8: Upload built artifacts (if the build succeeded)
+      # Step 8: Sanitize filenames in the output directory
+      - name: Sanitize filenames
+        if: success()
+        run: |
+          cd output
+          for file in *; do
+            # Replace invalid characters with underscores
+            new_name=$(echo "$file" | tr ':<>|*?"\r\n' '_')
+            if [ "$file" != "$new_name" ]; then
+              mv "$file" "$new_name"
+            fi
+          done
+
+      # Step 9: Upload built artifacts (if the build succeeded)
       - name: Upload artifacts
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: built-packages
           path: output/
-          
