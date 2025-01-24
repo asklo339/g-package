@@ -1,0 +1,5 @@
+#!@SHELL_PATH@
+
+# version: 2.0
+
+source @TERMUX_PREFIX_CLASSICAL@/opt/glibc-runner/glibc-runner.sh $@

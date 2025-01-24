@@ -1,0 +1,10 @@
+TERMUX_PKG_HOMEPAGE=https://sourceforge.net/projects/giflib/
+TERMUX_PKG_DESCRIPTION="A library for reading and writing gif images"
+TERMUX_PKG_LICENSE="MIT"
+TERMUX_PKG_MAINTAINER="@termux-pacman"
+TERMUX_PKG_VERSION=5.2.2
+TERMUX_PKG_SRCURL=https://fossies.org/linux/misc/giflib-$TERMUX_PKG_VERSION.tar.gz
+TERMUX_PKG_SHA256=be7ffbd057cadebe2aa144542fd90c6838c6a083b5e8a9048b8ee3b66b29d5fb
+TERMUX_PKG_DEPENDS="glibc"
+TERMUX_PKG_BUILD_DEPENDS="xmlto-glibc"
+TERMUX_PKG_BUILD_IN_SRC=true

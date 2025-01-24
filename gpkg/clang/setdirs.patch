@@ -1,0 +1,106 @@
+diff --git a/lib/Driver/ToolChains/Gnu.cpp b/lib/Driver/ToolChains/Gnu.cpp
+index e5e1b1d7..3603a129 100644
+--- a/lib/Driver/ToolChains/Gnu.cpp
++++ b/lib/Driver/ToolChains/Gnu.cpp
+@@ -3312,12 +3312,8 @@ Generic_GCC::addLibCxxIncludePaths(const llvm::opt::ArgList &DriverArgs,
+   // If this is a development, non-installed, clang, libcxx will
+   // not be found at ../include/c++ but it likely to be found at
+   // one of the following two locations:
+-  SmallString<128> UsrLocalIncludeDir(SysRoot);
+-  llvm::sys::path::append(UsrLocalIncludeDir, "usr", "local", "include");
+-  if (AddIncludePath(UsrLocalIncludeDir))
+-    return;
+   SmallString<128> UsrIncludeDir(SysRoot);
+-  llvm::sys::path::append(UsrIncludeDir, "usr", "include");
++  llvm::sys::path::append(UsrIncludeDir, "@TERMUX_PREFIX@", "include");
+   if (AddIncludePath(UsrIncludeDir))
+     return;
+ }
+diff --git a/lib/Driver/ToolChains/Linux.cpp b/lib/Driver/ToolChains/Linux.cpp
+index 4300a2bd..e2ede427 100644
+--- a/lib/Driver/ToolChains/Linux.cpp
++++ b/lib/Driver/ToolChains/Linux.cpp
+@@ -305,8 +305,8 @@ Linux::Linux(const Driver &D, const llvm::Triple &Triple, const ArgList &Args)
+   }
+   Generic_GCC::AddMultilibPaths(D, SysRoot, OSLibDir, MultiarchTriple, Paths);
+ 
+-  addPathIfExists(D, concat(SysRoot, "/lib", MultiarchTriple), Paths);
+-  addPathIfExists(D, concat(SysRoot, "/lib/..", OSLibDir), Paths);
++  addPathIfExists(D, concat(SysRoot, "@TERMUX_PREFIX@/lib", MultiarchTriple), Paths);
++  addPathIfExists(D, concat(SysRoot, "@TERMUX_PREFIX@/lib/..", OSLibDir), Paths);
+ 
+   if (IsAndroid) {
+     // Android sysroots contain a library directory for each supported OS
+@@ -319,25 +319,23 @@ Linux::Linux(const Driver &D, const llvm::Triple &Triple, const ArgList &Args)
+         Paths);
+   }
+ 
+-  addPathIfExists(D, concat(SysRoot, "/usr/lib", MultiarchTriple), Paths);
++  addPathIfExists(D, concat(SysRoot, "@TERMUX_PREFIX@/lib", MultiarchTriple), Paths);
+   // 64-bit OpenEmbedded sysroots may not have a /usr/lib dir. So they cannot
+   // find /usr/lib64 as it is referenced as /usr/lib/../lib64. So we handle
+   // this here.
+   if (Triple.getVendor() == llvm::Triple::OpenEmbedded &&
+       Triple.isArch64Bit())
+-    addPathIfExists(D, concat(SysRoot, "/usr", OSLibDir), Paths);
++    addPathIfExists(D, concat(SysRoot, "@TERMUX_PREFIX@/", OSLibDir), Paths);
+   else
+-    addPathIfExists(D, concat(SysRoot, "/usr/lib/..", OSLibDir), Paths);
++    addPathIfExists(D, concat(SysRoot, "@TERMUX_PREFIX@/lib/..", OSLibDir), Paths);
+   if (IsRISCV) {
+     StringRef ABIName = tools::riscv::getRISCVABI(Args, Triple);
+-    addPathIfExists(D, concat(SysRoot, "/", OSLibDir, ABIName), Paths);
+-    addPathIfExists(D, concat(SysRoot, "/usr", OSLibDir, ABIName), Paths);
++    addPathIfExists(D, concat(SysRoot, "@TERMUX_PREFIX@/", OSLibDir, ABIName), Paths);
+   }
+ 
+   Generic_GCC::AddMultiarchPaths(D, SysRoot, OSLibDir, Paths);
+ 
+-  addPathIfExists(D, concat(SysRoot, "/lib"), Paths);
+-  addPathIfExists(D, concat(SysRoot, "/usr/lib"), Paths);
++  addPathIfExists(D, concat(SysRoot, "@TERMUX_PREFIX@/lib"), Paths);
+ }
+ 
+ ToolChain::RuntimeLibType Linux::GetDefaultRuntimeLibType() const {
+@@ -609,7 +607,7 @@ std::string Linux::getDynamicLinker(const ArgList &Args) const {
+       (Triple.getVendor() == llvm::Triple::UnknownVendor ||
+        Triple.getVendor() == llvm::Triple::PC))
+     return "/usr/" + Triple.str() + "/lib/" + Loader;
+-  return "/" + LibDir + "/" + Loader;
++  return "@TERMUX_PREFIX@/" + LibDir + "/" + Loader;
+ }
+ 
+ void Linux::AddClangSystemIncludeArgs(const ArgList &DriverArgs,
+@@ -634,7 +632,7 @@ void Linux::AddClangSystemIncludeArgs(const ArgList &DriverArgs,
+     return;
+ 
+   // LOCAL_INCLUDE_DIR
+-  addSystemInclude(DriverArgs, CC1Args, concat(SysRoot, "/usr/local/include"));
++  addSystemInclude(DriverArgs, CC1Args, concat(SysRoot, "@TERMUX_PREFIX@/include"));
+   // TOOL_INCLUDE_DIR
+   AddMultilibIncludeArgs(DriverArgs, CC1Args);
+ 
+@@ -655,10 +653,10 @@ void Linux::AddClangSystemIncludeArgs(const ArgList &DriverArgs,
+   // /usr/include.
+   std::string MultiarchIncludeDir = getMultiarchTriple(D, getTriple(), SysRoot);
+   if (!MultiarchIncludeDir.empty() &&
+-      D.getVFS().exists(concat(SysRoot, "/usr/include", MultiarchIncludeDir)))
++      D.getVFS().exists(concat(SysRoot, "@TERMUX_PREFIX@/include", MultiarchIncludeDir)))
+     addExternCSystemInclude(
+         DriverArgs, CC1Args,
+-        concat(SysRoot, "/usr/include", MultiarchIncludeDir));
++        concat(SysRoot, "@TERMUX_PREFIX@/include", MultiarchIncludeDir));
+ 
+   if (getTriple().getOS() == llvm::Triple::RTEMS)
+     return;
+@@ -666,9 +664,7 @@ void Linux::AddClangSystemIncludeArgs(const ArgList &DriverArgs,
+   // Add an include of '/include' directly. This isn't provided by default by
+   // system GCCs, but is often used with cross-compiling GCCs, and harmless to
+   // add even when Clang is acting as-if it were a system compiler.
+-  addExternCSystemInclude(DriverArgs, CC1Args, concat(SysRoot, "/include"));
+-
+-  addExternCSystemInclude(DriverArgs, CC1Args, concat(SysRoot, "/usr/include"));
++  addExternCSystemInclude(DriverArgs, CC1Args, concat(SysRoot, "@TERMUX_PREFIX@/include"));
+ 
+   if (!DriverArgs.hasArg(options::OPT_nobuiltininc) && getTriple().isMusl())
+     addSystemInclude(DriverArgs, CC1Args, ResourceDirInclude);

@@ -1,0 +1,9 @@
+TERMUX_PKG_HOMEPAGE=https://www.nongnu.org/libunwind/
+TERMUX_PKG_DESCRIPTION="Determine and manipulate the call-chain of a program"
+TERMUX_PKG_LICENSE="GPL-3.0"
+TERMUX_PKG_MAINTAINER="@termux-pacman"
+TERMUX_PKG_VERSION=1.8.1
+TERMUX_PKG_SRCURL=https://github.com/libunwind/libunwind/releases/download/v$TERMUX_PKG_VERSION/libunwind-$TERMUX_PKG_VERSION.tar.gz
+TERMUX_PKG_SHA256=ddf0e32dd5fafe5283198d37e4bf9decf7ba1770b6e7e006c33e6df79e6a6157
+TERMUX_PKG_DEPENDS="zlib-glibc, liblzma-glibc"
+TERMUX_PKG_EXTRA_CONFIGURE_ARGS="--disable-tests"

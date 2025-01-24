@@ -1,0 +1,11 @@
+--- src/src/freedreno/vulkan/tu_device.cc	2024-01-24 23:01:24.000000000 +0300
++++ src/src/freedreno/vulkan/tu_device.cc.patch	2024-01-31 11:04:37.987688273 +0300
+@@ -505,7 +505,7 @@
+    /* VK_EXT_line_rasterization */
+    features->rectangularLines = true;
+    features->bresenhamLines = true;
+-   features->smoothLines = false;
++   features->smoothLines = true;
+    features->stippledRectangularLines = false;
+    features->stippledBresenhamLines = false;
+    features->stippledSmoothLines = false;
