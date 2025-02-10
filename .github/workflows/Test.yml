@@ -1,0 +1,96 @@
+name: Test Package
+
+on:
+  workflow_dispatch:
+    inputs:
+      package_name:
+        description: "Name of the package to build"
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Ubuntu and Docker
+      - name: Set up Ubuntu and Docker
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+              ca-certificates \
+              curl \
+              gnupg \
+              lsb-release
+          sudo mkdir -p /etc/apt/keyrings
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+          sudo apt-get update
+          sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+          sudo docker --version
+          sudo systemctl status docker
+
+      # Step 3: Set up Docker inside Docker (DinD)
+      - name: Set up Docker inside Docker
+        uses: docker/setup-docker-action@v3
+        with:
+          docker-run-args: --privileged
+
+      # Step 4: Start the Docker container and set up the Android SDK
+      - name: Set up Android SDK
+        run: |
+          sudo ./scripts/run-docker.sh ./scripts/setup-android-sdk.sh
+
+      # Step 5: Install Python 3.11
+      - name: Install Python
+        run: |
+          sudo ./scripts/run-docker.sh bash -c "
+            sudo apt-get update &&
+            sudo apt-get install -y software-properties-common &&
+            sudo add-apt-repository ppa:deadsnakes/ppa -y &&
+            sudo apt-get update &&
+            sudo apt-get install -y python3.11 &&
+            python3.11 --version
+          "
+
+      # Step 6: Build the package (or packages)
+      - name: Build package
+        run: |
+          if [ "${{ github.event.inputs.package_name }}" = "proton-arm64ec" ]; then
+            echo "Target is proton-arm64ec; building SDL2 first then proton-arm64ec."
+            CMD="./build-package.sh -a aarch64 sdl2 && ./build-package.sh -a aarch64 proton-arm64ec"
+          else
+            echo "Building package ${{ github.event.inputs.package_name }}."
+            CMD="./build-package.sh -a aarch64 ${{ github.event.inputs.package_name }}"
+          fi
+          sudo ./scripts/run-docker.sh bash -c "$CMD" > build.log 2>&1 || true
+
+      # Step 7: Upload build logs (if the build failed)
+      - name: Upload build logs
+        if: env.build_log
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: build.log
+
+      # Step 8: Sanitize filenames in the output directory
+      - name: Sanitize filenames
+        if: success()
+        run: |
+          cd output
+          for file in *; do
+            new_name=$(echo "$file" | tr ':<>|*?"\r\n' '_')
+            if [ "$file" != "$new_name" ]; then
+              mv "$file" "$new_name"
+            fi
+          done
+
+      # Step 9: Upload built artifacts (if the build succeeded)
+      - name: Upload artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: built-packages
+          path: output/
