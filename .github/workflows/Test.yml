@@ -1,10 +1,10 @@
-name: Test Package
+name: Build Test
 
 on:
   workflow_dispatch:
     inputs:
-      package_name:
-        description: "Name of the package to build"
+      package_paths:
+        description: "Comma-separated list of package paths (e.g., x11-packages/sdl2,packages/coreutils)"
         required: true
 
 jobs:
@@ -24,11 +24,21 @@ jobs:
               curl \
               gnupg \
               lsb-release
+
+          # Add Docker’s GPG key
           sudo mkdir -p /etc/apt/keyrings
           curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-          echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+          # Add Docker’s repository
+          echo \
+            "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+            $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+          # Install Docker
           sudo apt-get update
           sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+          # Verify Docker installation
           sudo docker --version
           sudo systemctl status docker
 
@@ -47,33 +57,52 @@ jobs:
       - name: Install Python
         run: |
           sudo ./scripts/run-docker.sh bash -c "
-            sudo apt-get update &&
-            sudo apt-get install -y software-properties-common &&
-            sudo add-apt-repository ppa:deadsnakes/ppa -y &&
-            sudo apt-get update &&
-            sudo apt-get install -y python3.11 &&
+            sudo apt-get update
+            sudo apt-get install -y software-properties-common
+            sudo add-apt-repository ppa:deadsnakes/ppa -y
+            sudo apt-get update
+            sudo apt-get install -y python3.11
             python3.11 --version
           "
 
-      # Step 6: Build the package (or packages)
-      - name: Build package
+      # Step 6: Build multiple packages dynamically
+      - name: Build packages
         run: |
-          if [ "${{ github.event.inputs.package_name }}" = "proton-arm64ec" ]; then
-            echo "Target is proton-arm64ec; building SDL2 first then proton-arm64ec."
-            CMD="./build-package.sh -a aarch64 sdl2 && ./build-package.sh -a aarch64 proton-arm64ec"
-          else
-            echo "Building package ${{ github.event.inputs.package_name }}."
-            CMD="./build-package.sh -a aarch64 ${{ github.event.inputs.package_name }}"
-          fi
-          sudo ./scripts/run-docker.sh bash -c "$CMD" > build.log 2>&1 || true
+          # Convert comma-separated input to an array
+          IFS=',' read -r -a package_array <<< "${{ github.event.inputs.package_paths }}"
 
-      # Step 7: Upload build logs (if the build failed)
+          # Track failed builds
+          failed_builds=()
+
+          # Iterate over each package path and build
+          for package_path in "${package_array[@]}"; do
+            echo "Building $package_path..."
+            log_file="${package_path//\//_}_build.log"
+
+            sudo ./scripts/run-docker.sh ./build-package.sh -a aarch64 "$package_path" > "$log_file" 2>&1 || true
+            
+            # Check for errors
+            if grep -q "ERROR" "$log_file"; then
+              echo "Build failed for $package_path. Uploading logs..."
+              failed_builds+=("$log_file")
+            else
+              echo "Build succeeded for $package_path."
+            fi
+          done
+
+          # Save failed build logs for upload
+          if [ ${#failed_builds[@]} -gt 0 ]; then
+            echo "Uploading failed build logs..."
+            echo "failed_builds=${failed_builds[*]}" >> $GITHUB_ENV
+          fi
+
+      # Step 7: Upload build logs (if any build failed)
       - name: Upload build logs
-        if: env.build_log
+        if: env.failed_builds
         uses: actions/upload-artifact@v4
         with:
           name: build-logs
-          path: build.log
+          path: ${{ env.failed_builds }}
 
       # Step 8: Sanitize filenames in the output directory
       - name: Sanitize filenames
@@ -81,13 +110,14 @@ jobs:
         run: |
           cd output
           for file in *; do
+            # Replace invalid characters with underscores
             new_name=$(echo "$file" | tr ':<>|*?"\r\n' '_')
             if [ "$file" != "$new_name" ]; then
               mv "$file" "$new_name"
             fi
           done
 
-      # Step 9: Upload built artifacts (if the build succeeded)
+      # Step 9: Upload built artifacts (if all builds succeeded)
       - name: Upload artifacts
         if: success()
         uses: actions/upload-artifact@v4
