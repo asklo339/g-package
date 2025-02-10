@@ -3,8 +3,8 @@ name: Build Test
 on:
   workflow_dispatch:
     inputs:
-      package_paths:
-        description: "Comma-separated list of package paths (e.g., x11-packages/sdl2,packages/coreutils)"
+      package_names:
+        description: "Comma-separated list of package paths to build (e.g., packages/coreutils,x11-packages/sdl2)"
         required: true
 
 jobs:
@@ -15,32 +15,37 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Set up Ubuntu and Docker
+      # Step 2: Set up Ubuntu and Docker (Fixed Docker Conflicts)
       - name: Set up Ubuntu and Docker
         run: |
           sudo apt-get update
+          sudo apt-get remove -y containerd || true  # Remove conflicting package if exists
           sudo apt-get install -y \
               ca-certificates \
               curl \
               gnupg \
               lsb-release
 
-          # Add Docker’s GPG key
-          sudo mkdir -p /etc/apt/keyrings
-          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+          # Add Docker’s official GPG key
+          sudo install -m 0755 -d /etc/apt/keyrings
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo tee /etc/apt/keyrings/docker.asc > /dev/null
+          sudo chmod a+r /etc/apt/keyrings/docker.asc
 
-          # Add Docker’s repository
+          # Set up Docker repository
           echo \
-            "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+            "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
             $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-          # Install Docker
+          # Install Docker and dependencies
           sudo apt-get update
           sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
+          # Enable and start Docker
+          sudo systemctl enable --now docker
+          sudo systemctl status docker || true
+
           # Verify Docker installation
           sudo docker --version
-          sudo systemctl status docker
 
       # Step 3: Set up Docker inside Docker (DinD)
       - name: Set up Docker inside Docker
@@ -65,44 +70,30 @@ jobs:
             python3.11 --version
           "
 
-      # Step 6: Build multiple packages dynamically
+      # Step 6: Build Multiple Packages and Capture Logs
       - name: Build packages
         run: |
-          # Convert comma-separated input to an array
-          IFS=',' read -r -a package_array <<< "${{ github.event.inputs.package_paths }}"
+          IFS=',' read -r -a package_paths <<< "${{ github.event.inputs.package_names }}"
+          for package_path in "${package_paths[@]}"; do
+            echo "Building package: $package_path"
+            sudo ./scripts/run-docker.sh ./build-package.sh -a aarch64 "$package_path" > "build_$package_path.log" 2>&1 || true
+          done
 
-          # Track failed builds
-          failed_builds=()
-
-          # Iterate over each package path and build
-          for package_path in "${package_array[@]}"; do
-            echo "Building $package_path..."
-            log_file="${package_path//\//_}_build.log"
-
-            sudo ./scripts/run-docker.sh ./build-package.sh -a aarch64 "$package_path" > "$log_file" 2>&1 || true
-            
-            # Check for errors
-            if grep -q "ERROR" "$log_file"; then
+          # Check for build failures
+          for package_path in "${package_paths[@]}"; do
+            if grep -q "ERROR" "build_$package_path.log"; then
               echo "Build failed for $package_path. Uploading logs..."
-              failed_builds+=("$log_file")
-            else
-              echo "Build succeeded for $package_path."
+              echo "build_logs+=build_$package_path.log" >> $GITHUB_ENV
             fi
           done
 
-          # Save failed build logs for upload
-          if [ ${#failed_builds[@]} -gt 0 ]; then
-            echo "Uploading failed build logs..."
-            echo "failed_builds=${failed_builds[*]}" >> $GITHUB_ENV
-          fi
-
-      # Step 7: Upload build logs (if any build failed)
+      # Step 7: Upload build logs (if the build failed)
       - name: Upload build logs
-        if: env.failed_builds
+        if: env.build_logs
         uses: actions/upload-artifact@v4
         with:
           name: build-logs
-          path: ${{ env.failed_builds }}
+          path: ${{ env.build_logs }}
 
       # Step 8: Sanitize filenames in the output directory
       - name: Sanitize filenames
@@ -110,14 +101,13 @@ jobs:
         run: |
           cd output
           for file in *; do
-            # Replace invalid characters with underscores
-            new_name=$(echo "$file" | tr ':<>|*?"\r\n' '_')
+            new_name=$(echo "$file" | tr ':<>|*?"\r\n' '_')  # Replace invalid characters with underscores
             if [ "$file" != "$new_name" ]; then
               mv "$file" "$new_name"
             fi
           done
 
-      # Step 9: Upload built artifacts (if all builds succeeded)
+      # Step 9: Upload built artifacts (if the build succeeded)
       - name: Upload artifacts
         if: success()
         uses: actions/upload-artifact@v4
