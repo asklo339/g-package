@@ -131,7 +131,7 @@ termux_step_post_make_install() {
 	tic -x -e alacritty,alacritty+common,alacritty-direct -o "$TI" "$TERMUX_PKG_SRCDIR/alacritty-${TERMUX_PKG_VERSION[3]}/extra/alacritty.info"
 
 	# Upstream instructions for building foot's terminfo
-	# See: https://codeberg.org/dnkl/foot/src/branch/master/INSTALL.md#terminfo
-	sed 's/@default_terminfo@/foot/g' "$TERMUX_PKG_SRCDIR/foot/foot.info" | \
-	tic -x -e foot,foot-direct -o "$TI" -
+	# See: https://codeberg.org/dnkl/foot/src/branch/master/INSTALL.md#terminfo-entries
+	# foot(1) itself will set the terminfo to `foot` later
+	tic -x -o "$TI" "$TERMUX_PKG_SRCDIR/foot-${TERMUX_PKG_VERSION[4]}/terminfo/foot.info"
 }
