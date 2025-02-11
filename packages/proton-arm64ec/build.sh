@@ -121,7 +121,7 @@ termux_step_pre_configure() {
 	CXXFLAGS+=" -Wno-implicit-function-declaration"
 
 	# Link android-spawn
-	LDFLAGS+=" -landroid-spawn -landroid-shmem"
+	LDFLAGS+=" -landroid-spawn"
 }
 
 termux_step_make() {
