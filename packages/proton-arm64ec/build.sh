@@ -12,6 +12,7 @@ TERMUX_PKG_DEPENDS="fontconfig, libdrm, freetype, krb5, libandroid-spawn, liband
 TERMUX_PKG_ANTI_BUILD_DEPENDS="vulkan-loader"
 TERMUX_PKG_BUILD_DEPENDS="libandroid-spawn-static, vulkan-loader-generic, libandroid-shmem-static"
 TERMUX_PKG_NO_STATICSPLIT=true
+TERMUX_PKG_API_LEVEL=26
 TERMUX_PKG_HOSTBUILD=true
 TERMUX_PKG_EXTRA_HOSTBUILD_CONFIGURE_ARGS="
 --without-x
