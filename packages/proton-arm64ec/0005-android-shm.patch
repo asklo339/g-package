@@ -14,9 +14,9 @@ index 86809b610c70..bcd9cf6b628e 100644
 --- a/dlls/ntdll/unix/esync.c
 +++ b/dlls/ntdll/unix/esync.c
 @@ -107,6 +107,69 @@ static long pagesize;
- 
+
  static pthread_mutex_t shm_addrs_mutex = PTHREAD_MUTEX_INITIALIZER;
- 
+
 +#ifdef __ANDROID__
 +#include <alloca.h>
 +#include <errno.h>
@@ -34,9 +34,9 @@ index 86809b610c70..bcd9cf6b628e 100644
 +    }
 +
 +    namelen = strlen(name);
-+    fname = (char *) alloca(sizeof("/data/data/com.termux/files/usr/tmp/") - 1 + namelen + 1);
-+    memcpy(fname, "/data/data/com.termux/files/usr/tmp/", sizeof("/data/data/com.termux/files/usr/tmp/") - 1);
-+    memcpy(fname + sizeof("/data/data/com.termux/files/usr/tmp/") - 1, name, namelen + 1);
++    fname = (char *) alloca(sizeof("/data/data/com.gebox.emu/files/usr/tmp/") - 1 + namelen + 1);
++    memcpy(fname, "/data/data/com.gebox.emu/files/usr/tmp/", sizeof("/data/data/com.gebox.emu/files/usr/tmp/") - 1);
++    memcpy(fname + sizeof("/data/data/com.gebox.emu/files/usr/tmp/") - 1, name, namelen + 1);
 +
 +    return unlink(fname);
 +}
@@ -56,9 +56,9 @@ index 86809b610c70..bcd9cf6b628e 100644
 +    }
 +
 +    namelen = strlen(name);
-+    fname = (char *) alloca(sizeof("/data/data/com.termux/files/usr/tmp/") - 1 + namelen + 1);
-+    memcpy(fname, "/data/data/com.termux/files/usr/tmp/", sizeof("/data/data/com.termux/files/usr/tmp/") - 1);
-+    memcpy(fname + sizeof("/data/data/com.termux/files/usr/tmp/") - 1, name, namelen + 1);
++    fname = (char *) alloca(sizeof("/data/data/com.gebox.emu/files/usr/tmp/") - 1 + namelen + 1);
++    memcpy(fname, "/data/data/com.gebox.emu/files/usr/tmp/", sizeof("/data/data/com.gebox.emu/files/usr/tmp/") - 1);
++    memcpy(fname + sizeof("/data/data/com.gebox.emu/files/usr/tmp/") - 1, name, namelen + 1);
 +
 +    fd = open(fname, oflag, mode);
 +    if (fd != -1) {
@@ -90,7 +90,7 @@ index e193f61b3a76..734dd84fb58a 100644
 @@ -64,6 +64,69 @@ static void **shm_addrs;
  static int shm_addrs_size;  /* length of the allocated shm_addrs array */
  static long pagesize;
- 
+
 +#ifdef __ANDROID__
 +#include <alloca.h>
 +#include <errno.h>
@@ -108,9 +108,9 @@ index e193f61b3a76..734dd84fb58a 100644
 +    }
 +
 +    namelen = strlen(name);
-+    fname = (char *) alloca(sizeof("/data/data/com.termux/files/usr/tmp/") - 1 + namelen + 1);
-+    memcpy(fname, "/data/data/com.termux/files/usr/tmp/", sizeof("/data/data/com.termux/files/usr/tmp/") - 1);
-+    memcpy(fname + sizeof("/data/data/com.termux/files/usr/tmp/") - 1, name, namelen + 1);
++    fname = (char *) alloca(sizeof("/data/data/com.gebox.emu/files/usr/tmp/") - 1 + namelen + 1);
++    memcpy(fname, "/data/data/com.gebox.emu/files/usr/tmp/", sizeof("/data/data/com.gebox.emu/files/usr/tmp/") - 1);
++    memcpy(fname + sizeof("/data/data/com.gebox.emu/files/usr/tmp/") - 1, name, namelen + 1);
 +
 +    return unlink(fname);
 +}
@@ -130,9 +130,9 @@ index e193f61b3a76..734dd84fb58a 100644
 +    }
 +
 +    namelen = strlen(name);
-+    fname = (char *) alloca(sizeof("/data/data/com.termux/files/usr/tmp/") - 1 + namelen + 1);
-+    memcpy(fname, "/data/data/com.termux/files/usr/tmp/", sizeof("/data/data/com.termux/files/usr/tmp/") - 1);
-+    memcpy(fname + sizeof("/data/data/com.termux/files/usr/tmp/") - 1, name, namelen + 1);
++    fname = (char *) alloca(sizeof("/data/data/com.gebox.emu/files/usr/tmp/") - 1 + namelen + 1);
++    memcpy(fname, "/data/data/com.gebox.emu/files/usr/tmp/", sizeof("/data/data/com.gebox.emu/files/usr/tmp/") - 1);
++    memcpy(fname + sizeof("/data/data/com.gebox.emu/files/usr/tmp/") - 1, name, namelen + 1);
 +
 +    fd = open(fname, oflag, mode);
 +    if (fd != -1) {
