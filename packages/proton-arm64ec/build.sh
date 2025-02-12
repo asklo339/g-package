@@ -18,6 +18,8 @@ TERMUX_PKG_EXTRA_HOSTBUILD_CONFIGURE_ARGS="
 --without-x
 --disable-tests
 "
+TERMUX_PKG_EXTRA_CONFIGURE_ARGS+=" ac_cv_func_shm_open=yes"
+TERMUX_PKG_EXTRA_CONFIGURE_ARGS+=" ac_cv_func_shm_unlink=yes"
 
 TERMUX_PKG_BLACKLISTED_ARCHES="arm, i686, x86_64"
 
