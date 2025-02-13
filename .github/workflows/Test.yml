@@ -50,7 +50,7 @@ jobs:
       # Step 4: Cache Docker layers
       - name: Cache Docker layers
         id: cache-docker-layers
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-docker-${{ github.sha }}
