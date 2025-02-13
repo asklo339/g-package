@@ -44,7 +44,7 @@ jobs:
 
       # Step 3: Set up Docker inside Docker (DinD)
       - name: Set up Docker inside Docker
-        uses: docker/setup-docker-action@v3
+        uses: docker/setup-docker-action@v4
         with:
           docker-run-args: --privileged
 
