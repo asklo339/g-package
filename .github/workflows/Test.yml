@@ -57,10 +57,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-docker-
 
-      # Step 5: Build Docker image
-      - name: Build Docker image
+         # Step 5: Build Docker image with caching
+      - name: Build Docker image with caching
         run: |
-          docker buildx build --cache-from=type=local,source=/tmp/.buildx-cache --cache-to=type=local,dest=/tmp/.buildx-cache,mode=max -t my-image-name .
+          docker buildx create --use  # Creates a new builder instance
+          docker buildx build --cache-from=type=local,source=/tmp/.buildx-cache --cache-to=type=local,dest=/tmp/.buildx-cache,mode=max -t my-image-name . --load
 
       # Step 6: Run the Docker container and set up the Android SDK
       - name: Set up Android SDK
