@@ -1,0 +1,10 @@
+TERMUX_PKG_HOMEPAGE=https://github.com/termux/libandroid-shmem
+TERMUX_PKG_DESCRIPTION="System V shared memory emulation on Android using ashmem"
+TERMUX_PKG_LICENSE="BSD 3-Clause"
+TERMUX_PKG_MAINTAINER="@termux"
+TERMUX_PKG_VERSION=0.5
+TERMUX_PKG_SRCURL=https://github.com/asklo339/Tup/releases/download/Fg/libshm.tar.gz
+TERMUX_PKG_SHA256=f601372617b39262d12c13fb8930f408d55f0f8eddb0378634254dd95b55120a
+TERMUX_PKG_BREAKS="libandroid-shmem-dev"
+TERMUX_PKG_REPLACES="libandroid-shmem-dev"
+TERMUX_PKG_BUILD_IN_SRC=true

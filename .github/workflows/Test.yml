@@ -1,0 +1,124 @@
+name: Build Package test
+
+on:
+  workflow_dispatch:
+    inputs:
+      package_name:
+        description: "Name of the package to build"
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Docker
+      - name: Set up Docker
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+              ca-certificates \
+              curl \
+              gnupg \
+              lsb-release
+
+          # Add Docker’s GPG key
+          sudo mkdir -p /etc/apt/keyrings
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+
+          # Add Docker’s repository
+          echo \
+            "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+            $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+          # Install Docker
+          sudo apt-get update
+          sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+          # Verify Docker installation
+          sudo docker --version
+          sudo systemctl status docker
+
+      # Step 3: Set up Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      # Step 4: Cache Docker layers
+      - name: Cache Docker layers
+        id: cache-docker-layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-docker-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-docker-
+
+         # Step 5: Build Docker image with caching
+      - name: Build Docker image with caching
+        run: |
+          docker buildx create --use  # Creates a new builder instance
+          docker buildx build --cache-from=type=local,source=/tmp/.buildx-cache --cache-to=type=local,dest=/tmp/.buildx-cache,mode=max -t my-image-name . --load
+
+      # Step 6: Run the Docker container and set up the Android SDK
+      - name: Set up Android SDK
+        run: |
+          sudo ./scripts/run-docker.sh ./scripts/setup-android-sdk.sh
+
+      # Step 7: Install Python 3.11
+      - name: Install Python
+        run: |
+          sudo ./scripts/run-docker.sh bash -c "
+            sudo apt-get update
+            sudo apt-get install -y software-properties-common
+            sudo add-apt-repository ppa:deadsnakes/ppa -y
+            sudo apt-get update
+            sudo apt-get install -y python3.11
+            python3.11 --version
+          "
+
+      # Step 8: Build the package and capture logs
+      - name: Build package
+        run: |
+          sudo ./scripts/run-docker.sh ./build-package.sh -a aarch64 ${{ github.event.inputs.package_name }} > build.log 2>&1 || true
+
+          # Check if the build failed
+          if grep -q "ERROR" build.log; then
+            echo "Build failed. Uploading logs..."
+            # Save the log file as an artifact
+            echo "build_log=build.log" >> $GITHUB_ENV
+          else
+            echo "Build succeeded."
+          fi
+
+      # Step 9: Upload build logs (if the build failed)
+      - name: Upload build logs
+        if: env.build_log
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: ${{ env.build_log }}
+
+      # Step 10: Sanitize filenames in the output directory
+      - name: Sanitize filenames
+        if: success()
+        run: |
+          cd output
+          for file in *; do
+            # Replace invalid characters with underscores
+            new_name=$(echo "$file" | tr ':<>|*?"\r\n' '_')
+            if [ "$file" != "$new_name" ]; then
+              mv "$file" "$new_name"
+            fi
+          done
+
+      # Step 11: Upload built artifacts (if the build succeeded)
+      - name: Upload artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: built-packages
+          path: output/
