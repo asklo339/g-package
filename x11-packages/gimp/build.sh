@@ -7,7 +7,7 @@ TERMUX_PKG_REVISION=2
 TERMUX_PKG_SRCURL=https://download.gimp.org/mirror/pub/gimp/v${TERMUX_PKG_VERSION%.*}/gimp-${TERMUX_PKG_VERSION}.tar.bz2
 TERMUX_PKG_SHA256=50a845eec11c8831fe8661707950f5b8446e35f30edfb9acf98f85c1133f856e
 TERMUX_PKG_AUTO_UPDATE=true
-TERMUX_PKG_DEPENDS="aalib, atk, babl, fontconfig, freetype, gdk-pixbuf, gegl, gexiv2, ghostscript, gimp-data, glib, glib-networking, gtk2, harfbuzz, hicolor-icon-theme, json-glib, libandroid-execinfo, libandroid-shmem, libc++, libcairo, libheif, libjpeg-turbo, libjxl, libmypaint, libpng, librsvg, libtiff, libwebp, libxcursor, libxmu, libxpm, littlecms, mypaint-brushes, openexr, openjpeg, pango, poppler, poppler-data, zlib"
+TERMUX_PKG_DEPENDS="aalib, atk, babl, fontconfig, freetype, gdk-pixbuf, gegl, gexiv2, ghostscript, gimp-data, glib, glib-networking, gtk2, harfbuzz, hicolor-icon-theme, json-glib, libandroid-execinfo, libposix-shm, libc++, libcairo, libheif, libjpeg-turbo, libjxl, libmypaint, libpng, librsvg, libtiff, libwebp, libxcursor, libxmu, libxpm, littlecms, mypaint-brushes, openexr, openjpeg, pango, poppler, poppler-data, zlib"
 TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
 --disable-python
 --disable-vector-icons

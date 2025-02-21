@@ -6,7 +6,7 @@ TERMUX_PKG_VERSION="0.10.2"
 TERMUX_PKG_SRCURL=https://github.com/neutrinolabs/xrdp/releases/download/v${TERMUX_PKG_VERSION}/xrdp-${TERMUX_PKG_VERSION}.tar.gz
 TERMUX_PKG_SHA256=6e2b4fb719fbd74a42c1008afc670e5e2940c8cbf3d8977e78c8451f7d267b62
 TERMUX_PKG_AUTO_UPDATE=true
-TERMUX_PKG_DEPENDS="libandroid-shmem, libcrypt, libx11, libxfixes, libxrandr, openssl, procps, tigervnc"
+TERMUX_PKG_DEPENDS="libposix-shm, libcrypt, libx11, libxfixes, libxrandr, openssl, procps, tigervnc"
 TERMUX_PKG_BUILD_IN_SRC=true
 TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
 --disable-pam

@@ -8,7 +8,7 @@ TERMUX_PKG_SHA256=b178398da32f8e1958db74057fec278fe0fcc3400485f20ded3ab2330c58f5
 TERMUX_PKG_AUTO_UPDATE=true
 TERMUX_PKG_UPDATE_TAG_TYPE='newest-tag'
 TERMUX_PKG_UPDATE_VERSION_REGEXP='\d+\.\d+\.\d+'
-TERMUX_PKG_DEPENDS="gdk-pixbuf, glib, gtk2, gtk3, libandroid-shmem, libbz2, libc++, liblzma, pango, zlib"
+TERMUX_PKG_DEPENDS="gdk-pixbuf, glib, gtk2, gtk3, libposix-shm, libbz2, libc++, liblzma, pango, zlib"
 TERMUX_PKG_RECOMMENDS="desktop-file-utils"
 TERMUX_PKG_EXTRA_CONFIGURE_ARGS="--disable-tcl --disable-mime-update"
 

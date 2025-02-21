@@ -8,4 +8,4 @@ lib/jvm/java-17-openjdk/lib/libjawt.so
 lib/jvm/java-17-openjdk/lib/libsplashscreen.so
 "
 TERMUX_SUBPKG_DESCRIPTION="Portion of openjdk-17 requiring X11 functionality"
-TERMUX_SUBPKG_DEPENDS="freetype, giflib, libandroid-shmem, libjpeg-turbo, libpng, libx11, libxext, libxi, libxrender, libxtst"
+TERMUX_SUBPKG_DEPENDS="freetype, giflib, libposix-shm, libjpeg-turbo, libpng, libx11, libxext, libxi, libxrender, libxtst"

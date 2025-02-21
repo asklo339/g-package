@@ -6,7 +6,7 @@ TERMUX_PKG_VERSION="21.0.6"
 TERMUX_PKG_SRCURL=https://github.com/openjdk/jdk21u/archive/refs/tags/jdk-${TERMUX_PKG_VERSION}-ga.tar.gz
 TERMUX_PKG_SHA256=9fec30f33b3a85c982cf8c1a6d99d296b2eef4e627e8586c3e42b9692983f5e9
 TERMUX_PKG_AUTO_UPDATE=true
-TERMUX_PKG_DEPENDS="libandroid-shmem, libandroid-spawn, libiconv, libjpeg-turbo, zlib, littlecms"
+TERMUX_PKG_DEPENDS="libposix-shm, libandroid-spawn, libiconv, libjpeg-turbo, zlib, littlecms"
 TERMUX_PKG_BUILD_DEPENDS="cups, fontconfig, libxrandr, libxt, xorgproto"
 # openjdk-21-x is recommended because X11 separation is still very experimental.
 TERMUX_PKG_RECOMMENDS="ca-certificates-java, openjdk-21-x, resolv-conf"

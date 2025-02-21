@@ -8,5 +8,5 @@ TERMUX_PKG_REVISION=1
 TERMUX_PKG_SRCURL=https://downloads.sourceforge.net/enlightenment/imlib2-${TERMUX_PKG_VERSION}.tar.xz
 TERMUX_PKG_SHA256=96244656576a3e0a6f58b78e514ddc919622ac6806711bc231837eee62c1de34
 TERMUX_PKG_AUTO_UPDATE=true
-TERMUX_PKG_DEPENDS="freetype, gdk-pixbuf, giflib, glib, libandroid-shmem, libbz2, libcairo, libheif, libid3tag, libjpeg-turbo, libjxl, liblzma, libpng, librsvg, libtiff, libwebp, libx11, libxcb, libxext, openjpeg, zlib"
+TERMUX_PKG_DEPENDS="freetype, gdk-pixbuf, giflib, glib, libposix-shm, libbz2, libcairo, libheif, libid3tag, libjpeg-turbo, libjxl, liblzma, libpng, librsvg, libtiff, libwebp, libx11, libxcb, libxext, openjpeg, zlib"
 TERMUX_PKG_EXTRA_CONFIGURE_ARGS="LIBS=-landroid-shmem"

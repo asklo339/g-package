@@ -193,7 +193,7 @@ termux_setup_toolchain_23c() {
 	cp "$TERMUX_SCRIPTDIR"/ndk-patches/{libintl.h,langinfo.h} usr/include
 
 	# Remove <sys/capability.h> because it is provided by libcap.
-	# Remove <sys/shm.h> from the NDK in favour of that from the libandroid-shmem.
+	# Remove <sys/shm.h> from the NDK in favour of that from the libposix-shm.
 	# Remove <sys/sem.h> as it doesn't work for non-root.
 	# Remove <glob.h> as we currently provide it from libandroid-glob.
 	# Remove <iconv.h> as it's provided by libiconv.
