@@ -82,7 +82,7 @@ jobs:
           if [ -f cached-build-state.zip ]; then
             echo "Cached build state found, restoring…"
             # Assumes the workspace is mounted at /workspace in the container.
-            sudo ./scripts/run-docker.sh bash -c "apt-get update && apt-get install -y unzip && unzip -o /workspace/cached-build-state.zip -d /"
+            sudo ./scripts/run-docker.sh bash -c "sudo apt-get update && sudo apt-get install -y unzip && sudo unzip -o /workspace/cached-build-state.zip -d /"
           else
             echo "No cached build state found."
           fi
@@ -117,7 +117,7 @@ jobs:
       - name: Archive cached build state inside Docker
         run: |
           # Zip the directories: /home/builder/.termux-build, /data/data/com.gebox.emu, and /home/builder/output.
-          sudo ./scripts/run-docker.sh bash -c "sudo apt-get update && sudo apt-get install -y zip && mkdir -p /workspace && sudo zip -r /workspace/cached-build-state.zip /home/builder/.termux-build/* /data/data/com.gebox.emu/* /home/builder/termux-packages/output/* -x '/home/builder/.termux-build/_cache/android-r27c-api-24-v1/*'"
+          sudo ./scripts/run-docker.sh bash -c "sudo apt-get update && sudo apt-get install -y zip && sudo mkdir -p /workspace && sudo zip -r /workspace/cached-build-state.zip /home/builder/.termux-build/* /data/data/com.gebox.emu/* /home/builder/termux-packages/output/* -x '/home/builder/.termux-build/_cache/android-r27c-api-24-v1/*'"
 
 
 
