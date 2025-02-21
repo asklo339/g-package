@@ -112,13 +112,13 @@ jobs:
       # Step 13: Upload the cached build state to a release (replacing any existing asset)
       - name: Upload cached build state to release
         run: |
-          gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
-          # Ensure the release "build-cache" exists; create it if not.
-          gh release view build-cache || gh release create build-cache --title "Build Cache" --notes "Auto generated build cache."
-          # Check that the zip file exists before uploading
-          if [ -f /workspace/cached-build-state.zip ]; then
-            echo "Uploading cached-build-state.zip to release..."
-            gh release upload build-cache /workspace/cached-build-state.zip --clobber
-          else
-            echo "Cached build state zip not found; skipping upload."
-          fi
+         sudo ./scripts/run-docker.sh bash -c " \
+         gh auth login --with-token <<< '${{ secrets.GITHUB_TOKEN }}'; \  
+         gh release view build-cache || gh release create build-cache --title 'Build Cache' --notes 'Auto generated build cache.'; \
+         if [ -f /workspace/cached-build-state.zip ]; then \
+         echo 'Uploading cached-build-state.zip to release...'; \
+         gh release upload build-cache /workspace/cached-build-state.zip --clobber; \
+         else \
+         echo 'Cached build state zip not found; skipping upload.'; \
+         fi \
+         "
