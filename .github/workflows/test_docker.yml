@@ -11,77 +11,70 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # Step 1: Checkout the repository
+      # Step 1: Checkout the repository.
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Set up Ubuntu and Docker
+      # Step 2: Set up Ubuntu and Docker.
       - name: Set up Ubuntu and Docker
         run: |
           sudo apt-get update
           sudo apt-get install -y ca-certificates curl gnupg lsb-release
           sudo mkdir -p /etc/apt/keyrings
-          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+          sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
           echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
           sudo apt-get update
           sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
           sudo docker --version
           sudo systemctl status docker
 
-      # Step 3: Set up Docker inside Docker (DinD)
+      # Step 3: Set up Docker inside Docker (DinD).
       - name: Set up Docker inside Docker
         uses: docker/setup-docker-action@v3
         with:
           docker-run-args: --privileged
 
-      # Step 4: Set up Android SDK inside Docker
+      # Step 4: Set up Android SDK inside Docker.
       - name: Set up Android SDK inside Docker
         run: |
           sudo ./scripts/run-docker.sh ./scripts/setup-android-sdk.sh
 
-      # Step 5: Start QEMU user static
+      # Step 5: Start QEMU user static.
       - name: Start QEMU user static
         run: |
-          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+          sudo docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 
-      # Step 6: Install Python 3.11
-      - name: Install Python
+      # Step 6: Install Python 3.11.
+      - name: Install Python 3.11
         run: |
-          sudo ./scripts/run-docker.sh bash -c "
-            sudo apt-get update &&
-            sudo apt-get install -y software-properties-common &&
-            sudo add-apt-repository ppa:deadsnakes/ppa -y &&
-            sudo apt-get update &&
-            sudo apt-get install -y python3.11 &&
-            python3.11 --version
-          "
+          sudo ./scripts/run-docker.sh bash -c "sudo apt-get update && sudo apt-get install -y software-properties-common && sudo add-apt-repository ppa:deadsnakes/ppa -y && sudo apt-get update && sudo apt-get install -y python3.11 && python3.11 --version"
 
-      # Step 7: Download cached build state from release (if available)
+      # Step 7: Download cached build state from release (if available).
       - name: Download cached build state from release
         run: |
-          # Log into GitHub CLI using the provided token.
-          gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
-          # Try to download the cached state from the release named "build-cache"
-          gh release download build-cache --pattern cached-build-state.zip --dir .
+          # Log in with the automatically provided GITHUB_TOKEN.
+          sudo gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
+          echo "Downloading cached build state from release..."
+          sudo gh release download build-cache --pattern cached-build-state.zip --dir .
         continue-on-error: true
 
-      # Step 8: Restore cached build state inside Docker (if the zip exists)
+      # Step 8: Restore cached build state inside Docker.
       - name: Restore cached build state inside Docker
         run: |
           if [ -f cached-build-state.zip ]; then
-            echo "Cached build state found, restoring…"
-            # Assumes your repository is mounted at /workspace in the container.
+            echo "Cached build state found, restoring..."
+            # Assumes your repository is mounted at /workspace inside the container.
             sudo ./scripts/run-docker.sh bash -c "sudo apt-get update && sudo apt-get install -y unzip && sudo unzip -o /workspace/cached-build-state.zip -d /"
           else
             echo "No cached build state found."
           fi
 
-      # Step 9: Build the package
+      # Step 9: Build the package.
       - name: Build package
         run: |
           sudo ./scripts/run-docker.sh ./build-package.sh -a aarch64 ${{ github.event.inputs.package_name }}
 
-      # Step 10: Sanitize filenames in the output directory
+      # Step 10: Sanitize filenames in the output directory.
       - name: Sanitize filenames
         if: success()
         run: |
@@ -93,7 +86,7 @@ jobs:
             fi
           done
 
-      # Step 11: Upload built artifacts (if the build succeeded)
+      # Step 11: Upload built packages artifact.
       - name: Upload built packages artifact
         if: success()
         uses: actions/upload-artifact@v4
@@ -101,17 +94,24 @@ jobs:
           name: built-packages
           path: output/
 
-      # Step 12: Archive the build state directories inside Docker
+      # Step 12: Archive the build state directories inside Docker.
       - name: Archive cached build state inside Docker
         run: |
-          # Create the zip file in /workspace so it's visible to the host.
-          sudo ./scripts/run-docker.sh bash -c "sudo apt-get update && sudo apt-get install -y zip && sudo mkdir -p /workspace && sudo zip -r /workspace/cached-build-state.zip /home/builder/.termux-build/* /data/data/com.gebox.emu/* /home/builder/termux-packages/output/* -x '/home/builder/.termux-build/_cache/android-r27c-api-24-v1/*'"
+          # Create the zip file in the repository root (assumed mounted as /workspace).
+          sudo ./scripts/run-docker.sh bash -c "sudo apt-get update && sudo apt-get install -y zip && mkdir -p /workspace && zip -r /workspace/cached-build-state.zip /home/builder/.termux-build/* /data/data/com.gebox.emu/* /home/builder/termux-packages/output/* -x '/home/builder/.termux-build/_cache/android-r27c-api-24-v1/*'"
+          echo "Listing /workspace to verify zip file:"
+          ls -la /workspace
 
-      # Step 13: Upload the cached build state to a release (replacing any existing asset)
+      # Step 13: Upload the cached build state to a release (replacing any existing asset).
       - name: Upload cached build state to release
         run: |
-          gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
+          sudo gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
           # Ensure the release "build-cache" exists; create it if not.
-          gh release view build-cache || gh release create build-cache --title "Build Cache" --notes "Auto generated build cache."
-          # Upload the zip asset and use --clobber to replace the existing asset.
-          gh release upload build-cache /workspace/cached-build-state.zip --clobber
+          sudo gh release view build-cache || sudo gh release create build-cache --title "Build Cache" --notes "Auto generated build cache."
+          # Check that the zip file exists before uploading.
+          if [ -f /workspace/cached-build-state.zip ]; then
+            echo "Uploading cached-build-state.zip to release..."
+            sudo gh release upload build-cache /workspace/cached-build-state.zip --clobber
+          else
+            echo "Cached build state zip not found; skipping upload."
+          fi
