@@ -1,0 +1,95 @@
+name: Build Package ahh
+
+on:
+  workflow_dispatch:
+    inputs:
+      package_name:
+        description: "Name of the package to build"
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Ubuntu and Docker
+      - name: Set up Ubuntu and Docker
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+              ca-certificates \
+              curl \
+              gnupg \
+              lsb-release
+
+          # Add Docker’s GPG key
+          sudo mkdir -p /etc/apt/keyrings
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+
+          # Add Docker’s repository
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+          # Install Docker
+          sudo apt-get update
+          sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+          # Verify Docker installation
+          sudo docker --version
+          sudo systemctl status docker
+
+      # Step 3: Set up Docker inside Docker (DinD)
+      - name: Set up Docker inside Docker
+        uses: docker/setup-docker-action@v3
+        with:
+          docker-run-args: --privileged
+
+      # Step 4: Set up Android SDK inside Docker
+      - name: Set up Android SDK
+        run: |
+          sudo ./scripts/run-docker.sh ./scripts/setup-android-sdk.sh
+
+      # Step 5: Start QEMU user static
+      - name: Start QEMU user static
+        run: |
+          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+      # Step 6: Install Python 3.11
+      - name: Install Python
+        run: |
+          sudo ./scripts/run-docker.sh bash -c "
+            sudo apt-get update
+            sudo apt-get install -y software-properties-common
+            sudo add-apt-repository ppa:deadsnakes/ppa -y
+            sudo apt-get update
+            sudo apt-get install -y python3.11
+            python3.11 --version
+          "
+
+      # Step 7: Build the package
+      - name: Build package
+        run: |
+          sudo ./scripts/run-docker.sh ./build-package.sh -l ${{ github.event.inputs.package_name }}
+
+      # Step 8: Sanitize filenames in the output directory
+      - name: Sanitize filenames
+        if: success()
+        run: |
+          cd output
+          for file in *; do
+            # Replace invalid characters with underscores
+            new_name=$(echo "$file" | tr ':<>|*?"\r\n' '_')
+            if [ "$file" != "$new_name" ]; then
+              mv "$file" "$new_name"
+            fi
+          done
+
+      # Step 9: Upload built artifacts (if the build succeeded)
+      - name: Upload artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: built-packages
+          path: output/
