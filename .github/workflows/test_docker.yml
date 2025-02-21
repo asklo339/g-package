@@ -103,7 +103,7 @@ jobs:
       - name: Archive cached build state inside Docker
         run: |
           # Create the zip file in the repository root (current directory).
-          sudo ./scripts/run-docker.sh bash -c "sudo apt-get update && sudo apt-get install -y zip && sudo zip -ry cached-build-state.zip /home/builder/.termux-build/* /data/data/com.gebox.emu/* /home/builder/termux-packages/output/* -x '/home/builder/.termux-build/_cache/android-r27c-api-24-v1/*'"
+          sudo ./scripts/run-docker.sh bash -c "sudo apt-get update && sudo apt-get install -y zip && sudo zip -ry cached-build-state.zip /data/data/com.gebox.emu/* /home/builder/termux-packages/output/*"
           echo "Listing files in the repository root:"
           ls -la
 
