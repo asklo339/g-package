@@ -1,4 +1,4 @@
-name: Build Packages Container Test
+name: Build Package Container Test
 
 on:
   workflow_dispatch:
@@ -15,84 +15,97 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Try to download the pre-built custom Ubuntu image artifact.
-      - name: Download custom Ubuntu image artifact
-        id: download-image
-        uses: actions/download-artifact@v4
-        with:
-          name: custom-ubuntu-image
-        continue-on-error: true
-
-      # Step 3: If the artifact was downloaded, load the Docker image.
-      - name: Load Docker image from artifact
-        if: steps.download-image.outcome == 'success'
-        run: |
-          docker load -i custom-ubuntu-image/my-custom-ubuntu.tar
-
-      # Step 4: If no pre-built image artifact exists, set up Ubuntu and Docker.
+      # Step 2: Set up Ubuntu and Docker
       - name: Set up Ubuntu and Docker
-        if: steps.download-image.outcome != 'success'
         run: |
           sudo apt-get update
-          sudo apt-get install -y ca-certificates curl gnupg lsb-release
+          sudo apt-get install -y \
+              ca-certificates \
+              curl \
+              gnupg \
+              lsb-release
+
+          # Add Docker’s GPG key
           sudo mkdir -p /etc/apt/keyrings
           curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+
+          # Add Docker’s repository
           echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+          # Install Docker
           sudo apt-get update
           sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+          # Verify Docker installation
           sudo docker --version
           sudo systemctl status docker
 
-      # Step 5: Set up Docker-in-Docker (DinD) if needed.
+      # Step 3: Set up Docker inside Docker (DinD)
       - name: Set up Docker inside Docker
-        if: steps.download-image.outcome != 'success'
         uses: docker/setup-docker-action@v3
         with:
           docker-run-args: --privileged
 
-      # Step 6: Set up Android SDK inside Docker.
-      - name: Set up Android SDK
-        if: steps.download-image.outcome != 'success'
+      # Step 4: Set up Android SDK inside Docker
+      - name: Set up Android SDK inside Docker
         run: |
           sudo ./scripts/run-docker.sh ./scripts/setup-android-sdk.sh
 
-      # Step 7: Start QEMU user static.
+      # Step 5: Start QEMU user static
       - name: Start QEMU user static
-        if: steps.download-image.outcome != 'success'
         run: |
           docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 
-      # Step 8: Install Python 3.11.
-      - name: Install Python 3.11
-        if: steps.download-image.outcome != 'success'
+      # Step 6: Install Python 3.11
+      - name: Install Python
         run: |
-          sudo ./scripts/run-docker.sh bash -c "\
-            sudo apt-get update && \
-            sudo apt-get install -y software-properties-common && \
-            sudo add-apt-repository ppa:deadsnakes/ppa -y && \
-            sudo apt-get update && \
-            sudo apt-get install -y python3.11 && \
-            python3.11 --version \
+          sudo ./scripts/run-docker.sh bash -c "
+            sudo apt-get update
+            sudo apt-get install -y software-properties-common
+            sudo add-apt-repository ppa:deadsnakes/ppa -y
+            sudo apt-get update
+            sudo apt-get install -y python3.11
+            python3.11 --version
           "
 
-      # Step 9: Build the package.
+      # Step 7: Download cached build state artifact (if it exists)
+      - name: Download cached build state
+        uses: actions/download-artifact@v4
+        with:
+          name: cached-build-state
+          path: .
+        continue-on-error: true
+
+      # Step 8: Restore cached build state inside Docker (if the zip exists)
+      - name: Restore cached build state inside Docker
+        run: |
+          if [ -f cached-build-state.zip ]; then
+            echo "Cached build state found, restoring…"
+            # Assumes the workspace is mounted at /workspace in the container.
+            sudo ./scripts/run-docker.sh bash -c "apt-get update && apt-get install -y unzip && unzip -o /workspace/cached-build-state.zip -d /"
+          else
+            echo "No cached build state found."
+          fi
+
+      # Step 9: Build the package
       - name: Build package
         run: |
           sudo ./scripts/run-docker.sh ./build-package.sh -a aarch64 ${{ github.event.inputs.package_name }}
 
-      # Step 10: Sanitize filenames in the output directory.
+      # Step 10: Sanitize filenames in the output directory
       - name: Sanitize filenames
         if: success()
         run: |
           cd output
           for file in *; do
+            # Replace invalid characters with underscores
             new_name=$(echo "$file" | tr ':<>|*?"\r\n' '_')
             if [ "$file" != "$new_name" ]; then
               mv "$file" "$new_name"
             fi
           done
 
-      # Step 11: Upload built artifacts.
+      # Step 11: Upload built artifacts (if the build succeeded)
       - name: Upload artifacts
         if: success()
         uses: actions/upload-artifact@v4
@@ -100,18 +113,15 @@ jobs:
           name: built-packages
           path: output/
 
-      # Step 12: If we built the environment from scratch, commit and save it as a Docker image.
-      - name: Save Docker image as tarball
-        if: steps.download-image.outcome != 'success'
+      # Step 12: Archive the build state directories inside Docker
+      - name: Archive cached build state inside Docker
         run: |
-          # Commit the most recent container (adjust the container selection as needed).
-          docker commit $(docker ps -q -l) my-custom-ubuntu
-          docker save -o my-custom-ubuntu.tar my-custom-ubuntu
+          # Zip the directories: /home/builder/.termux-build, /data/data/com.gebox.emu, and /home/builder/output.
+          sudo ./scripts/run-docker.sh bash -c "apt-get update && apt-get install -y zip && zip -r /workspace/cached-build-state.zip /home/builder/.termux-build /data/data/com.gebox.emu /home/builder/output"
 
-      # Step 13: Upload the custom Ubuntu image artifact for future builds.
-      - name: Upload custom Ubuntu image artifact
-        if: steps.download-image.outcome != 'success'
+      # Step 13: Upload cached build state artifact for future builds
+      - name: Upload cached build state artifact
         uses: actions/upload-artifact@v4
         with:
-          name: custom-ubuntu-image
-          path: my-custom-ubuntu.tar
+          name: cached-build-state
+          path: cached-build-state.zip
