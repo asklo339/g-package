@@ -1,4 +1,4 @@
-name: Build Package test
+name: Build Package Test
 
 on:
   workflow_dispatch:
@@ -10,14 +10,13 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       # Step 1: Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Set up Docker
-      - name: Set up Docker
+      # Step 2: Set up Ubuntu and Docker
+      - name: Set up Ubuntu and Docker
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -43,32 +42,21 @@ jobs:
           sudo docker --version
           sudo systemctl status docker
 
-      # Step 3: Set up Docker Buildx
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
-
-      # Step 4: Cache Docker layers
-      - name: Cache Docker layers
-        id: cache-docker-layers
-        uses: actions/cache@v2
+      # Step 3: Set up Docker inside Docker (DinD)
+      - name: Set up Docker inside Docker
+        uses: docker/setup-docker-action@v3
         with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-docker-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-docker-
+          docker-run-args: --privileged
 
-         # Step 5: Build Docker image with caching
-      - name: Build Docker image with caching
-        run: |
-          docker buildx create --use  # Creates a new builder instance
-          docker buildx build --cache-from=type=local,source=/tmp/.buildx-cache --cache-to=type=local,dest=/tmp/.buildx-cache,mode=max -t my-image-name . --load
-
-      # Step 6: Run the Docker container and set up the Android SDK
+      # Step 4: Start the Docker container and set up the Android SDK
       - name: Set up Android SDK
         run: |
           sudo ./scripts/run-docker.sh ./scripts/setup-android-sdk.sh
 
-      # Step 7: Install Python 3.11
+
+
+     
+      # Step 5: Install Python 3.11
       - name: Install Python
         run: |
           sudo ./scripts/run-docker.sh bash -c "
@@ -80,10 +68,11 @@ jobs:
             python3.11 --version
           "
 
-      # Step 8: Build the package and capture logs
+      # Step 6: Build the package and capture logs
       - name: Build package
         run: |
-          sudo ./scripts/run-docker.sh ./build-package.sh -a aarch64 ${{ github.event.inputs.package_name }} > build.log 2>&1 || true
+          # Redirect build output to a log file
+          sudo ./scripts/run-docker.sh ./build-package.sh -a aarch64 ${{ github.event.inputs.package_name }} > build.log 2>&1|| true
 
           # Check if the build failed
           if grep -q "ERROR" build.log; then
@@ -94,7 +83,7 @@ jobs:
             echo "Build succeeded."
           fi
 
-      # Step 9: Upload build logs (if the build failed)
+      # Step 7: Upload build logs (if the build failed)
       - name: Upload build logs
         if: env.build_log
         uses: actions/upload-artifact@v4
@@ -102,7 +91,7 @@ jobs:
           name: build-logs
           path: ${{ env.build_log }}
 
-      # Step 10: Sanitize filenames in the output directory
+      # Step 8: Sanitize filenames in the output directory
       - name: Sanitize filenames
         if: success()
         run: |
@@ -115,7 +104,7 @@ jobs:
             fi
           done
 
-      # Step 11: Upload built artifacts (if the build succeeded)
+      # Step 9: Upload built artifacts (if the build succeeded)
       - name: Upload artifacts
         if: success()
         uses: actions/upload-artifact@v4
