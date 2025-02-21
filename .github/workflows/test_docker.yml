@@ -65,6 +65,8 @@ jobs:
             # Assumes your repository is mounted as the current directory inside the container.
             sudo ./scripts/run-docker.sh bash -c "sudo apt-get update && sudo apt-get install -y unzip && sudo unzip -o cached-build-state.zip -d /"
             sudo ./scripts/run-docker.sh bash -c "sudo chown -R root:root /data/data/com.gebox.emu/* /home/builder/termux-packages/output/*"
+            sudo ./scripts/run-docker.sh bash -c "chmod +x /data/data/com.gebox.emu/* /home/builder/termux-packages/output/*"
+            
             
             
             
