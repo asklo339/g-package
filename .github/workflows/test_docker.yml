@@ -117,7 +117,7 @@ jobs:
       - name: Archive cached build state inside Docker
         run: |
           # Zip the directories: /home/builder/.termux-build, /data/data/com.gebox.emu, and /home/builder/output.
-          sudo ./scripts/run-docker.sh bash -c "sudo apt-get update && sudo apt-get install -y zip && sudo zip -r /workspace/cached-build-state.zip /home/builder/.termux-build /data/data/com.gebox.emu /home/builder/output"
+          sudo ./scripts/run-docker.sh bash -c "sudo apt-get update && sudo apt-get install -y zip && sudo zip -r /workspace/cached-build-state.zip /home/builder/.termux-build /data/data/com.gebox.emu /home/builder/termux-packages/output"
 
       # Step 13: Upload cached build state artifact for future builds
       - name: Upload cached build state artifact
