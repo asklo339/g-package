@@ -1,0 +1,133 @@
+name: Build Package Container 
+
+on:
+  workflow_dispatch:
+    inputs:
+      package_name:
+        description: "Name of the package to build"
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Install Docker on the runner
+      - name: Set up Docker on runner
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+              ca-certificates \
+              curl \
+              gnupg \
+              lsb-release
+          sudo mkdir -p /etc/apt/keyrings
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+          sudo apt-get update
+          sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+          sudo docker --version
+          sudo systemctl status docker
+
+      # Step 3: Download previous container image (if it exists)
+      - name: Download saved container image
+        uses: actions/download-artifact@v4
+        with:
+          name: container-image
+          path: /tmp
+        continue-on-error: true  # Don’t fail if no artifact exists yet
+
+      # Step 4: Load the saved container image or use a default base image
+      - name: Load or initialize container image
+        run: |
+          if [ -f /tmp/container-image.tar ]; then
+            echo "Loading saved container image..."
+            sudo docker load -i /tmp/container-image.tar
+            CONTAINER_IMAGE=$(sudo docker images -q | head -n 1)
+            echo "Using saved image: $CONTAINER_IMAGE"
+          else
+            echo "No saved image found. Starting with default Ubuntu image..."
+            # Replace with your preferred base image if different (e.g., termux/termux-packages)
+            CONTAINER_IMAGE="ubuntu:20.04"
+            echo "Using base image: $CONTAINER_IMAGE"
+          fi
+          echo "CONTAINER_IMAGE=$CONTAINER_IMAGE" >> $GITHUB_ENV
+
+      # Step 5: Start a container from the loaded image
+      - name: Start build container
+        run: |
+          # Start container in detached mode with privileged access
+          sudo docker run -d --name build-container --privileged -v $(pwd):/workdir ${{ env.CONTAINER_IMAGE }} tail -f /dev/null
+          sudo docker ps -a
+
+      # Step 6: Copy scripts into the container
+      - name: Copy repository into container
+        run: |
+          sudo docker cp . build-container:/workdir
+
+      # Step 7: Set up Android SDK inside the container
+      - name: Set up Android SDK
+        run: |
+          sudo docker exec build-container bash -c "cd /workdir && ./scripts/setup-android-sdk.sh"
+
+      # Step 8: Start QEMU user static inside the container
+      - name: Start QEMU user static
+        run: |
+          sudo docker exec build-container bash -c "docker run --rm --privileged multiarch/qemu-user-static --reset -p yes"
+
+      # Step 9: Install Python 3.11 inside the container
+      - name: Install Python
+        run: |
+          sudo docker exec build-container bash -c "
+            apt-get update
+            apt-get install -y software-properties-common
+            add-apt-repository ppa:deadsnakes/ppa -y
+            apt-get update
+            apt-get install -y python3.11
+            python3.11 --version
+          "
+
+      # Step 10: Build the package inside the container
+      - name: Build package
+        run: |
+          sudo docker exec build-container bash -c "cd /workdir && ./build-package.sh -a aarch64 ${{ github.event.inputs.package_name }}"
+
+      # Step 11: Sanitize filenames in the output directory
+      - name: Sanitize filenames
+        if: success()
+        run: |
+          sudo docker exec build-container bash -c "
+            cd /workdir/output
+            for file in *; do
+              new_name=\$(echo \"\$file\" | tr ':<>|*?\"\r\n' '_')
+              if [ \"\$file\" != \"\$new_name\" ]; then
+                mv \"\$file\" \"\$new_name\"
+              fi
+            done
+          "
+
+      # Step 12: Save the container as an image
+      - name: Save container state as image
+        run: |
+          sudo docker commit build-container saved-container-image
+          sudo docker save -o /tmp/container-image.tar saved-container-image
+          sudo docker stop build-container
+          sudo docker rm build-container
+
+      # Step 13: Upload the saved container image
+      - name: Upload container image
+        uses: actions/upload-artifact@v4
+        with:
+          name: container-image
+          path: /tmp/container-image.tar
+
+      # Step 14: Upload built artifacts
+      - name: Upload built artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: built-packages
+          path: output/
