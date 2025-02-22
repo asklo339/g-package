@@ -52,7 +52,7 @@ enable_wineandroid_drv=no
 --with-pthread
 --with-pulse
 --without-sane
---without-sdl
+--with-sdl
 --without-udev
 --without-unwind
 --without-usb
