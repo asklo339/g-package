@@ -1,0 +1,14 @@
+diff --git a/dlls/ntdll/unix/loader.c b/dlls/ntdll/unix/loader.c
+index e4f110d..3a0abe7 100644
+--- a/dlls/ntdll/unix/loader.c
++++ b/dlls/ntdll/unix/loader.c
+@@ -2255,7 +2255,9 @@ static void start_main_thread(void)
+     dbg_init();
+     startup_info_size = server_init_process();
+     hacks_init();
++#if defined(__linux__) && !defined(__ANDROID__)
+     fsync_init();
++#endif
+     esync_init();
+     virtual_map_user_shared_data();
+     init_cpu_info();
