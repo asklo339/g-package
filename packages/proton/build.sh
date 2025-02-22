@@ -8,7 +8,7 @@ TERMUX_PKG_REVISION=4
 _REAL_VERSION="${TERMUX_PKG_VERSION/\~/-}"
 TERMUX_PKG_SRCURL=https://github.com/asklo339/Tup/releases/download/Fix/wine-proton-9.0-arm64ec.tar.xz
 TERMUX_PKG_SHA256=7379d94753f4884e5679ea0b34a4abcd869cb32510a9e3a4ab52d53a3a325a7a
-TERMUX_PKG_DEPENDS="fontconfig, libdrm, freetype, krb5, libandroid-spawn, libposix-shm, libc++, libgmp, libgnutls, libxcb, libxcomposite, libxcursor, libxfixes, libxrender, mesa, opengl, pulseaudio, sdl2, vulkan-loader, xorg-xrandr"
+TERMUX_PKG_DEPENDS="fontconfig, libdrm, freetype, krb5, libandroid-spawn, libposix-shm, libc++, libgmp, libgnutls, libxcb, libxcomposite, libxcursor, libxfixes, libxrender, opengl, pulseaudio, sdl2, vulkan-loader, xorg-xrandr"
 TERMUX_PKG_ANTI_BUILD_DEPENDS="vulkan-loader"
 TERMUX_PKG_BUILD_DEPENDS="libandroid-spawn-static, libposix-shm-static, vulkan-loader-generic, libposix-shm"
 TERMUX_PKG_NO_STATICSPLIT=true
@@ -46,7 +46,7 @@ enable_wineandroid_drv=no
 --without-netapi
 --without-opencl
 --with-opengl
---with-osmesa
+--without-osmesa
 --without-oss
 --without-pcap
 --with-pthread
@@ -121,7 +121,7 @@ termux_step_pre_configure() {
 	CXXFLAGS+=" -Wno-implicit-function-declaration"
 
 	# Link android-spawn
-	LDFLAGS+=" -landroid-spawn -landroid-shmem"
+	LDFLAGS+=" -landroid-spawn -lposix-shm"
 
 }
 
