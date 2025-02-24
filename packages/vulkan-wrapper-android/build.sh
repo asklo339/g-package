@@ -25,10 +25,7 @@ TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
 -Db_ndebug=true
 "
 
-termux_step_post_get_source() {
-	# Do not use meson wrap projects
-	
-}
+
 
 termux_step_pre_configure() {
 	termux_setup_cmake
