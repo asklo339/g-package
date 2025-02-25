@@ -30,6 +30,9 @@ TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
 termux_step_pre_configure() {
 	termux_setup_cmake
 
+        CFLAGS+=" -Wno-implicit-function-declaration"
+        CXXFLAGS+=" -Wno-implicit-function-declaration"
+
 	CPPFLAGS+=" -D__USE_GNU"
 	LDFLAGS+=" -lposix-shm"
 
