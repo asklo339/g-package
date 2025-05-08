@@ -1,0 +1,9 @@
+TERMUX_PKG_HOMEPAGE=https://github.com/ekzhang/bore
+TERMUX_PKG_DESCRIPTION="Bore is a simple CLI tool for making tunnels to localhost"
+TERMUX_PKG_LICENSE="MIT"
+TERMUX_PKG_MAINTAINER="@termux"
+TERMUX_PKG_VERSION="0.5.2"
+TERMUX_PKG_SRCURL="https://github.com/ekzhang/bore/archive/v${TERMUX_PKG_VERSION}.tar.gz"
+TERMUX_PKG_SHA256=cf821106ed428314d825ebe2d09f1842f979eac7acbf0976ac9cd01853d65163
+TERMUX_PKG_BUILD_IN_SRC=true
+TERMUX_PKG_AUTO_UPDATE=true

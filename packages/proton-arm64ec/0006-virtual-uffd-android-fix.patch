@@ -1,0 +1,26 @@
+diff --git a/dlls/ntdll/unix/virtual.c b/dlls/ntdll/unix/virtual.c
+index 9236974..b21b577 100644
+--- a/dlls/ntdll/unix/virtual.c
++++ b/dlls/ntdll/unix/virtual.c
+@@ -408,8 +408,9 @@ static void kernel_writewatch_softdirty_init(void)
+ static void kernel_writewatch_init(void)
+ {
+     struct uffdio_api uffdio_api;
+-
++#if defined __linux__ && !defined __ANDROID__
+     uffd_fd = syscall( __NR_userfaultfd, O_CLOEXEC | O_NONBLOCK | UFFD_USER_MODE_ONLY );
++#endif
+     if (uffd_fd == -1)
+     {
+         kernel_writewatch_softdirty_init();
+@@ -6271,8 +6272,9 @@ NTSTATUS get_memory_fex_stats_shm( HANDLE process, LPCVOID addr, MEMORY_FEX_STAT
+ 
+         oflag |= O_CREAT | O_TRUNC;
+     }
+-
++#if defined(__linux__) && !defined(__ANDROID__)
+     fd = shm_open( buf, oflag, S_IRWXU | S_IRWXG | S_IRWXO );
++#endif
+     if (fd == -1) return STATUS_INTERNAL_ERROR;
+ 
+     if (ftruncate( fd, info->map_size )) goto err;
