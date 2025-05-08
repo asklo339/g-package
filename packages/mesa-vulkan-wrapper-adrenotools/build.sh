@@ -7,8 +7,8 @@ TERMUX_PKG_VERSION="25.0.0"
 TERMUX_PKG_REVISION=1
 TERMUX_PKG_SRCURL=git+https://gitlab.freedesktop.org/Pipetto-crypto/mesa
 TERMUX_PKG_GIT_BRANCH=wrapper
-TERMUX_PKG_DEPENDS="libposix-shm, libc++, libdrm, libx11, libxcb, libxshmfence, libwayland, vulkan-loader-generic, zlib, zstd"
-TERMUX_PKG_BUILD_DEPENDS="libposix-shm-static, libposix-shm, libwayland-protocols, libxrandr, xorgproto"
+TERMUX_PKG_DEPENDS="libandroid-shmem, libc++, libdrm, libx11, libxcb, libxshmfence, libwayland, vulkan-loader-generic, zlib, zstd"
+TERMUX_PKG_BUILD_DEPENDS="libandroid-shmem-static, libposix-shm, libwayland-protocols, libxrandr, xorgproto"
 TERMUX_PKG_API_LEVEL=26
 
 TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
@@ -36,7 +36,7 @@ termux_step_pre_configure() {
 
 	CPPFLAGS+=" -D__USE_GNU"
 	CPPFLAGS+=" -U__ANDROID__"
-	LDFLAGS+=" -lposix-shm"
+	LDFLAGS+=" -landroid-shmem"
 
 	_WRAPPER_BIN=$TERMUX_PKG_BUILDDIR/_wrapper/bin
 	mkdir -p $_WRAPPER_BIN
