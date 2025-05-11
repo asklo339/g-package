@@ -1,0 +1,12 @@
+TERMUX_PKG_HOMEPAGE=https://github.com/termux/libposix-shm
+TERMUX_PKG_DESCRIPTION="System V shared memory emulation on Android using ashmem"
+TERMUX_PKG_LICENSE="BSD 3-Clause"
+TERMUX_PKG_MAINTAINER="@termux"
+TERMUX_PKG_VERSION=0.5
+TERMUX_PKG_SRCURL=https://github.com/asklo339/Tup/releases/download/Taro/libposixshm.tar.gz
+TERMUX_PKG_SHA256=30f08f59e92688dc132d61ea513e41775fb57bbe8f4c1ebe53cfebc7881fa9b5
+TERMUX_PKG_BREAKS="libandroid-shmem-dev"
+TERMUX_PKG_REPLACES="libandroid-shmem-dev"
+TERMUX_PKG_BREAKS="libposix-shm-dev"
+TERMUX_PKG_REPLACES="libposix-shm-dev"
+TERMUX_PKG_BUILD_IN_SRC=true

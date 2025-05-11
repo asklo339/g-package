@@ -1,0 +1,12 @@
+diff -u -r ../mold-2.34.0/CMakeLists.txt ./CMakeLists.txt
+--- ../mold-2.34.0/CMakeLists.txt	2024-09-25 01:01:39.000000000 +0000
++++ ./CMakeLists.txt	2024-09-25 16:59:02.874025988 +0000
+@@ -251,7 +251,7 @@
+ 
+   # Remove the default `lib` prefix
+   set_target_properties(mold-wrapper PROPERTIES PREFIX "")
+-  target_link_libraries(mold-wrapper PRIVATE ${CMAKE_DL_LIBS})
++  target_link_libraries(mold-wrapper PRIVATE ${CMAKE_DL_LIBS} android-spawn)
+   target_sources(mold-wrapper PRIVATE src/mold-wrapper.c)
+ endif()
+ 
