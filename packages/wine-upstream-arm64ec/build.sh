@@ -8,7 +8,7 @@ TERMUX_PKG_REVISION=4
 _REAL_VERSION="${TERMUX_PKG_VERSION/\~/-}"
 TERMUX_PKG_SRCURL=https://github.com/asklo339/Tup/releases/download/upstream-arm64ec/wine-upstream-arm64ec.tar.xz
 TERMUX_PKG_SHA256=8e4bc6ebbf67a475fcedafe2623646a351203c09d3f2920199ac57d0936df593
-TERMUX_PKG_DEPENDS="fontconfig, libdrm, freetype, krb5, libandroid-spawn, libposix-shm, libc++, libgmp, libgnutls, libxcb, libxcomposite, libxcursor, libxfixes, libxrender, opengl, pulseaudio, sdl2, vulkan-loader, xorg-xrandr"
+TERMUX_PKG_DEPENDS="fontconfig, alsa-lib, libdrm, freetype, krb5, libandroid-spawn, libposix-shm, libc++, libgmp, libgnutls, libxcb, libxcomposite, libxcursor, libxfixes, libxrender, opengl, pulseaudio, sdl2, vulkan-loader, xorg-xrandr"
 TERMUX_PKG_ANTI_BUILD_DEPENDS="vulkan-loader"
 TERMUX_PKG_BUILD_DEPENDS="libandroid-spawn-static, libposix-shm-static, vulkan-loader-generic, libposix-shm, sdl2-static"
 TERMUX_PKG_NO_STATICSPLIT=true
@@ -28,7 +28,7 @@ enable_wineandroid_drv=no
 --with-wine-tools=$TERMUX_PKG_HOSTBUILD_DIR
 --enable-nls
 --disable-tests
---without-alsa
+--with-alsa
 --without-capi
 --without-coreaudio
 --without-cups
