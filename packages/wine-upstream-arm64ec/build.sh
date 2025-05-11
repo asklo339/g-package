@@ -28,7 +28,7 @@ enable_wineandroid_drv=no
 --with-wine-tools=$TERMUX_PKG_HOSTBUILD_DIR
 --enable-nls
 --disable-tests
---without-alsa
+--with-alsa
 --without-capi
 --without-coreaudio
 --without-cups
