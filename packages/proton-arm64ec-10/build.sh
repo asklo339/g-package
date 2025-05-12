@@ -7,8 +7,8 @@ TERMUX_PKG_VERSION=10.0
 TERMUX_PKG_REVISION=4
 _REAL_VERSION="${TERMUX_PKG_VERSION/\~/-}"
 TERMUX_PKG_SRCURL=https://github.com/asklo339/Tup/releases/download/proton-arm64ec-10/wine-proton-10.0-arm64ec.tar.xz
-TERMUX_PKG_SHA256=424a30ad5f7f80d3f1a920f7e4b9a5e0ec8b8db51202898988500f9c89105b07
-TERMUX_PKG_DEPENDS="fontconfig, gstreamer, gst-plugins-base, libdrm, freetype, krb5, libandroid-spawn, libposix-shm, libc++, libgmp, libgnutls, libxcb, libxcomposite, libxcursor, libxfixes, libxrender, opengl, pulseaudio, sdl2, vulkan-loader, xorg-xrandr"
+TERMUX_PKG_SHA256=bff7c3984d4942a863ea612114125e3f809874b392df33600fbc77019b6ee5ee
+TERMUX_PKG_DEPENDS="fontconfig, libdrm, freetype, krb5, libandroid-spawn, libposix-shm, libc++, libgmp, libgnutls, libxcb, libxcomposite, libxcursor, libxfixes, libxrender, opengl, pulseaudio, sdl2, vulkan-loader, xorg-xrandr"
 TERMUX_PKG_ANTI_BUILD_DEPENDS="vulkan-loader"
 TERMUX_PKG_BUILD_DEPENDS="libandroid-spawn-static, libposix-shm-static, vulkan-loader-generic, libposix-shm, sdl2-static"
 TERMUX_PKG_NO_STATICSPLIT=true
@@ -39,7 +39,7 @@ enable_wineandroid_drv=no
 --with-gettextpo=no
 --without-gphoto
 --with-gnutls
---with-gstreamer
+--without-gstreamer
 --without-inotify
 --with-krb5
 --with-mingw=clang
