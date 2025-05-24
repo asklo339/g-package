@@ -71,7 +71,7 @@ jobs:
       # Step 7: Build the package
       - name: Build package
         run: |
-          sudo ./scripts/run-docker.sh ./build-package.sh -a x86_64 ${{ github.event.inputs.package_name }}
+          sudo ./scripts/run-docker.sh ./build-package.sh -a aarch64 ${{ github.event.inputs.package_name }}
 
       # Step 8: Sanitize filenames in the output directory
       - name: Sanitize filenames
