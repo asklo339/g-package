@@ -96,7 +96,7 @@ jobs:
       # Step 11: Upload built packages artifact.
       - name: Upload built packages artifact
         if: success()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: built-packages
           path: output/
