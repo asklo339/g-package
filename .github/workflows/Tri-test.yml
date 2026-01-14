@@ -15,15 +15,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Download and install Docker static binary
+      # Step 2: Install Docker automatically
       - name: Install Docker
         run: |
           set -e
-          # Define the version you want (use a valid one!
-          echo "Downloading Docker $DOCKER_VERSION"
-          wget https://download.docker.com/linux/static/stable/x86_64/docker-29.1.4.tgz
-          tar xzvf docker-$DOCKER_VERSION.tgz
-          sudo mv docker/* /usr/local/bin/
+          curl -fsSL https://get.docker.com -o get-docker.sh
+          sudo sh get-docker.sh
           docker --version
           
       # Step 3: Set up QEMU for multi-arch (optional)
