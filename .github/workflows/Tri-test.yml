@@ -1,0 +1,71 @@
+name: Build Package Only Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      package_name:
+        description: "Name of the package to build"
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Docker with DinD and Buildx
+      - name: Set up Docker
+        uses: docker/setup-docker-action@v3
+        with:
+          docker-buildx: true
+          buildx-version: latest
+          docker-run-args: --privileged
+
+      # Step 3: Start QEMU for multi-arch builds
+      - name: Set up QEMU
+        run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+      # Step 4: Build environment container
+      - name: Build environment container
+        run: |
+          docker build -t build-env -f Dockerfile .
+
+      # Step 5: Run build inside container
+      - name: Build package inside container
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace build-env bash -c "
+            set -e
+            # Install Android SDK
+            ./scripts/setup-android-sdk.sh
+            # Install Python 3.11
+            sudo apt-get update
+            sudo apt-get install -y software-properties-common
+            sudo add-apt-repository ppa:deadsnakes/ppa -y
+            sudo apt-get update
+            sudo apt-get install -y python3.11 python3.11-venv python3.11-distutils
+            python3.11 --version
+            # Build the package
+            ./build-package.sh -a aarch64 ${{ github.event.inputs.package_name }}
+          "
+
+      # Step 6: Sanitize filenames in output
+      - name: Sanitize filenames
+        if: success()
+        run: |
+          cd output
+          for file in *; do
+            new_name=$(echo "$file" | tr ':<>|*?"\r\n ' '_')
+            if [ "$file" != "$new_name" ]; then
+              mv "$file" "$new_name"
+            fi
+          done
+
+      # Step 7: Upload artifacts
+      - name: Upload built packages
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: built-packages
+          path: output/
