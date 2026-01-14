@@ -1,4 +1,4 @@
-name: Build Package Only Test
+name: Build Package only test
 
 on:
   workflow_dispatch:
@@ -11,46 +11,40 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # Step 1: Checkout the repository
+      # Step 1: Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Set up Docker with DinD and Buildx
-      - name: Set up Docker
-        uses: docker/setup-docker-action@v3
-        with:
-          docker-buildx: true
-          buildx-version: latest
-          docker-run-args: --privileged
-
-      # Step 3: Start QEMU for multi-arch builds
+      # Step 2: Download and install Docker static binary
+      - name: Install Docker
+        run: |
+          set -e
+          # Define the version you want (use a valid one!)
+          DOCKER_VERSION="29.0.5"
+          echo "Downloading Docker $DOCKER_VERSION"
+          wget https://download.docker.com/linux/static/stable/x86_64/docker-$DOCKER_VERSION.tgz
+          tar xzvf docker-$DOCKER_VERSION.tgz
+          sudo mv docker/* /usr/local/bin/
+          docker --version
+          
+      # Step 3: Set up QEMU for multi-arch (optional)
       - name: Set up QEMU
-        run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-
-      # Step 4: Build environment container
-      - name: Build environment container
         run: |
-          docker build -t build-env -f Dockerfile .
+          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 
-      # Step 5: Run build inside container
-      - name: Build package inside container
+      # Step 4: Build package inside Docker container
+      - name: Build package
         run: |
-          docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace build-env bash -c "
-            set -e
-            # Install Android SDK
+          docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace ubuntu:22.04 bash -c "
+            apt-get update
+            apt-get install -y curl wget unzip software-properties-common
             ./scripts/setup-android-sdk.sh
-            # Install Python 3.11
-            sudo apt-get update
-            sudo apt-get install -y software-properties-common
-            sudo add-apt-repository ppa:deadsnakes/ppa -y
-            sudo apt-get update
-            sudo apt-get install -y python3.11 python3.11-venv python3.11-distutils
+            apt-get install -y python3.11 python3.11-venv python3.11-distutils
             python3.11 --version
-            # Build the package
             ./build-package.sh -a aarch64 ${{ github.event.inputs.package_name }}
           "
 
-      # Step 6: Sanitize filenames in output
+      # Step 5: Sanitize filenames
       - name: Sanitize filenames
         if: success()
         run: |
@@ -62,7 +56,7 @@ jobs:
             fi
           done
 
-      # Step 7: Upload artifacts
+      # Step 6: Upload artifacts
       - name: Upload built packages
         if: success()
         uses: actions/upload-artifact@v4
