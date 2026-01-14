@@ -19,10 +19,9 @@ jobs:
       - name: Install Docker
         run: |
           set -e
-          # Define the version you want (use a valid one!)
-          DOCKER_VERSION="29.0.5"
+          # Define the version you want (use a valid one!
           echo "Downloading Docker $DOCKER_VERSION"
-          wget https://download.docker.com/linux/static/stable/x86_64/docker-$DOCKER_VERSION.tgz
+          wget https://download.docker.com/linux/static/stable/x86_64/docker-29.1.4.tgz
           tar xzvf docker-$DOCKER_VERSION.tgz
           sudo mv docker/* /usr/local/bin/
           docker --version
